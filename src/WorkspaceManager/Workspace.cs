@@ -64,7 +64,11 @@ public static class Workspace
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    public static bool IsValidName(string name) => Regex.IsMatch(name, @"^[\w\-\.]+$");
+    /// <summary>Profile names become file names: no separators, no leading dot, bounded length.</summary>
+    public static bool IsValidName(string name) => name.Length <= 64 && Regex.IsMatch(name, @"^\w[\w\-\.]*$");
+
+    /// <summary>Package AUMIDs look like "Family_publisherid!AppId"; anything else could smuggle extra explorer.exe arguments.</summary>
+    static bool IsValidAumid(string aumid) => aumid.Length <= 256 && Regex.IsMatch(aumid, @"^[\w\.\-]+_[a-z0-9]+![\w\.\-]+$");
     public static string FileFor(string name) => System.IO.Path.Combine(Dir, name + ".json");
 
     public static string DisplayOf(string profile) => profile switch
@@ -176,6 +180,7 @@ public static class Workspace
 
     public static WorkspaceProfile? Load(string name)
     {
+        if (!IsValidName(name)) return null;
         var file = FileFor(name);
         if (!File.Exists(file)) return null;
         try
@@ -199,9 +204,11 @@ public static class Workspace
                 {
                     string Get(string k) => a.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString()! : "";
                     var e = new AppEntry { Name = Get("Name"), DisplayName = Get("DisplayName"), Title = Get("Title"), Path = Get("Path"), Aumid = Get("Aumid") };
-                    if (e.Aumid == "") e.Aumid = null;
+                    if (e.Aumid == "" || (e.Aumid != null && !IsValidAumid(e.Aumid))) e.Aumid = null;
                     if (string.IsNullOrWhiteSpace(e.DisplayName)) e.DisplayName = Describe(e.Path, e.Name);
-                    if (e.Path != "") profile.Apps.Add(e);
+                    // Only absolute paths to .exe files are ever launched.
+                    if (System.IO.Path.IsPathFullyQualified(e.Path) && e.Path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        profile.Apps.Add(e);
                 }
             }
             return profile;
@@ -221,11 +228,12 @@ public static class Workspace
     {
         try
         {
-            if (!string.IsNullOrEmpty(a.Aumid))
+            if (!string.IsNullOrEmpty(a.Aumid) && IsValidAumid(a.Aumid))
             {
                 Process.Start(new ProcessStartInfo("explorer.exe", $"shell:AppsFolder\\{a.Aumid}") { UseShellExecute = true });
                 return null;
             }
+            if (!System.IO.Path.IsPathFullyQualified(a.Path) || !a.Path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return "invalid path";
             if (!File.Exists(a.Path)) return "not installed";
             Process.Start(new ProcessStartInfo(a.Path)
             {
