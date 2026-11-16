@@ -12,6 +12,7 @@ A lightweight Windows 11 tray app with a native Fluent look: acrylic flyout, Mic
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/UI-WPF%20Fluent-6C3FC5)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+[![Build](https://github.com/EngineGames-Development/WorkspaceManager/actions/workflows/build.yml/badge.svg)](https://github.com/EngineGames-Development/WorkspaceManager/actions/workflows/build.yml)
 
 </div>
 
@@ -43,7 +44,7 @@ A lightweight Windows 11 tray app with a native Fluent look: acrylic flyout, Mic
 Requires **Windows 10 1809+ / Windows 11** and the **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)** to build. Mica and acrylic need Windows 11 22H2 or later; older versions get a solid background.
 
 ```powershell
-git clone https://github.com/<you>/WorkspaceManager.git
+git clone https://github.com/EngineGames-Development/WorkspaceManager.git
 cd WorkspaceManager
 dotnet publish src/WorkspaceManager -c Release -o "$env:LOCALAPPDATA\Programs\WorkspaceManager"
 & "$env:LOCALAPPDATA\Programs\WorkspaceManager\WorkspaceManager.exe"
